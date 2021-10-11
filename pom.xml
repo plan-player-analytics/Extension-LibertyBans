@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.djrapitops</groupId>
-    <artifactId>Extension-template</artifactId>
+    <artifactId>Extension-LibertyBans</artifactId>
     <version>1.0-SNAPSHOT</version>
     <build>
         <plugins>
@@ -50,6 +50,12 @@
             <id>plan-repo</id>
             <url>https://repo.playeranalytics.net/releases</url>
         </repository>
+
+        <!-- LibertyBans -->
+        <repository>
+            <id>arim-mvn-agpl3</id>
+            <url>https://mvn-repo.arim.space/affero-gpl3/</url>
+        </repository>
     </repositories>
 
     <dependencies>
@@ -61,12 +67,12 @@
         </dependency>
 
         <!-- Plugin API Dependency -->
-        <!--        <dependency>-->
-        <!--            <groupId></groupId>-->
-        <!--            <artifactId></artifactId>-->
-        <!--            <version></version>-->
-        <!--            <scope>provided</scope>-->
-        <!--        </dependency>-->
+        <dependency>
+            <groupId>space.arim.libertybans</groupId>
+            <artifactId>bans-api</artifactId>
+            <version>0.8.0</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- Platforms -->
 

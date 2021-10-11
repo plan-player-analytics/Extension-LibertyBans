@@ -22,20 +22,22 @@
 */
 package com.djrapitops.extension;
 
+import com.djrapitops.plan.extension.Caller;
 import com.djrapitops.plan.extension.DataExtension;
+import com.djrapitops.plan.extension.NotReadyException;
 
 import java.util.Optional;
 
 /**
- * Factory for DataExtension.
+ * Factory for the LibertyBans DataExtension.
  *
- * @author AuroraLS3
+ * @author Vankka
  */
-public class NewExtensionFactory {
+public class LibertyBansExtensionFactory {
 
     private boolean isAvailable() {
         try {
-            Class.forName("");
+            Class.forName("space.arim.libertybans.api.LibertyBans");
             return true;
         } catch (ClassNotFoundException e) {
             return false;
@@ -44,8 +46,14 @@ public class NewExtensionFactory {
 
     public Optional<DataExtension> createExtension() {
         if (isAvailable()) {
-            return Optional.of(new NewExtension());
+            try {
+                return Optional.of(new LibertyBansExtension());
+            } catch (NotReadyException ignored) {}
         }
         return Optional.empty();
+    }
+
+    public void registerListener(Caller caller) {
+        new LibertyBansListener(caller).register();
     }
 }
