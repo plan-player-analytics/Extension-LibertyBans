@@ -26,19 +26,19 @@ import com.djrapitops.plan.extension.CallEvents;
 import com.djrapitops.plan.extension.DataExtension;
 import com.djrapitops.plan.extension.FormatType;
 import com.djrapitops.plan.extension.NotReadyException;
-import com.djrapitops.plan.extension.annotation.*;
+import com.djrapitops.plan.extension.annotation.DataBuilderProvider;
+import com.djrapitops.plan.extension.annotation.PluginInfo;
+import com.djrapitops.plan.extension.builder.ExtensionDataBuilder;
 import com.djrapitops.plan.extension.icon.Color;
 import com.djrapitops.plan.extension.icon.Family;
-import com.djrapitops.plan.query.CommonQueries;
+import com.djrapitops.plan.extension.icon.Icon;
 import com.djrapitops.plan.query.QueryService;
 import space.arim.libertybans.api.*;
 import space.arim.libertybans.api.punish.Punishment;
-import space.arim.libertybans.api.punish.PunishmentBase;
 import space.arim.libertybans.api.select.PunishmentSelector;
 import space.arim.omnibus.Omnibus;
 import space.arim.omnibus.OmnibusProvider;
 
-import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -68,6 +68,7 @@ public class LibertyBansExtension implements DataExtension {
 
         Omnibus omnibus = OmnibusProvider.getOmnibus();
         this.api = omnibus.getRegistry().getProvider(LibertyBans.class).orElseThrow(NotReadyException::new);
+        if (api == null) throw new NotReadyException();
         return api;
     }
 
@@ -92,157 +93,75 @@ public class LibertyBansExtension implements DataExtension {
         }
     }
 
-    @BooleanProvider(
-            text = "Banned",
-            description = "Is the player banned on BanManager",
-            priority = 100,
-            conditionName = "banned",
-            iconName = "gavel",
-            iconColor = Color.RED
-    )
-    public boolean isBanned(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.BAN).isPresent();
-    }
+    @DataBuilderProvider
+    public ExtensionDataBuilder punishmentData(UUID playerUUID) {
+        Optional<Punishment> possibleBan = punishment(playerUUID, PunishmentType.BAN);
+        Optional<Punishment> possibleMute = punishment(playerUUID, PunishmentType.MUTE);
 
-    @Conditional("banned")
-    @StringProvider(
-            text = "Banned by",
-            description = "Who banned the player",
-            priority = 99,
-            iconName = "user",
-            iconColor = Color.RED,
-            playerName = true
-    )
-    public String banIssuer(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.BAN)
-                .map(PunishmentBase::getOperator)
-                .map(this::prettyOperator)
-                .orElseThrow(IllegalStateException::new);
-    }
+        ExtensionDataBuilder builder = newExtensionDataBuilder()
+                .addValue(Boolean.class, valueBuilder("Banned")
+                        .description("Is the player banned on LibertyBans")
+                        .priority(100)
+                        .icon(Icon.called("gavel").of(Color.RED).build())
+                        .buildBoolean(possibleBan.isPresent()))
+                .addValue(Boolean.class, valueBuilder("Muted")
+                        .description("Is the player muted on LibertyBans")
+                        .priority(50)
+                        .icon(Icon.called("bell-slash").of(Color.DEEP_ORANGE).build())
+                        .buildBoolean(possibleMute.isPresent()));
 
-    @Conditional("banned")
-    @NumberProvider(
-            text = "Date",
-            description = "When the ban was issued",
-            priority = 98,
-            iconName = "calendar",
-            iconFamily = Family.REGULAR,
-            iconColor = Color.RED,
-            format = FormatType.DATE_YEAR
-    )
-    public long banIssueDate(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.BAN)
-                .map(Punishment::getStartDate)
-                .map(Instant::toEpochMilli)
-                .orElseThrow(IllegalStateException::new);
-    }
+        possibleBan.ifPresent(ban -> builder
+                .addValue(String.class, valueBuilder("Banned by")
+                        .description("Who banned the player")
+                        .priority(99)
+                        .icon(Icon.called("user").of(Color.RED).build())
+                        .showAsPlayerPageLink()
+                        .buildString(prettyOperator(ban.getOperator())))
+                .addValue(Long.class, valueBuilder("Date")
+                        .description("When the ban was issued")
+                        .priority(98)
+                        .icon(Icon.called("calendar").of(Color.RED).of(Family.REGULAR).build())
+                        .format(FormatType.DATE_YEAR)
+                        .buildNumber(ban.getStartDate().toEpochMilli()))
+                .addValue(Long.class, valueBuilder("Ends")
+                        .description("When the ban expires")
+                        .priority(96)
+                        .icon(Icon.called("calendar-check").of(Color.RED).of(Family.REGULAR).build())
+                        .format(FormatType.DATE_YEAR)
+                        .buildNumber(ban.getEndDate().toEpochMilli()))
+                .addValue(String.class, valueBuilder("Reason")
+                        .description("Why the ban was issued")
+                        .priority(95)
+                        .icon(Icon.called("comment").of(Family.REGULAR).of(Color.RED).build())
+                        .buildString(ban.getReason()))
+        );
 
-    @Conditional("banned")
-    @NumberProvider(
-            text = "Ends",
-            description = "When the ban expires",
-            priority = 96,
-            iconName = "calendar-check",
-            iconFamily = Family.REGULAR,
-            iconColor = Color.RED,
-            format = FormatType.DATE_YEAR
-    )
-    public long banExpireDate(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.BAN)
-                .map(Punishment::getEndDate)
-                .map(Instant::toEpochMilli)
-                .orElseThrow(IllegalStateException::new);
-    }
+        possibleMute.ifPresent(mute -> builder
+                .addValue(String.class, valueBuilder("Muted by")
+                        .description("Who banned the player")
+                        .priority(49)
+                        .icon(Icon.called("user").of(Color.DEEP_ORANGE).build())
+                        .showAsPlayerPageLink()
+                        .buildString(prettyOperator(mute.getOperator())))
+                .addValue(Long.class, valueBuilder("Date")
+                        .description("When the mute was issued")
+                        .priority(48)
+                        .icon(Icon.called("calendar").of(Color.DEEP_ORANGE).of(Family.REGULAR).build())
+                        .format(FormatType.DATE_YEAR)
+                        .buildNumber(mute.getStartDate().toEpochMilli()))
+                .addValue(Long.class, valueBuilder("Ends")
+                        .description("When the mute expires")
+                        .priority(46)
+                        .icon(Icon.called("calendar-check").of(Color.DEEP_ORANGE).of(Family.REGULAR).build())
+                        .format(FormatType.DATE_YEAR)
+                        .buildNumber(mute.getEndDate().toEpochMilli()))
+                .addValue(String.class, valueBuilder("Reason")
+                        .description("Why the mute was issued")
+                        .priority(45)
+                        .icon(Icon.called("comment").of(Family.REGULAR).of(Color.DEEP_ORANGE).build())
+                        .buildString(mute.getReason()))
+        );
 
-    @Conditional("banned")
-    @StringProvider(
-            text = "Reason",
-            description = "Why the ban was issued",
-            priority = 95,
-            iconName = "comment",
-            iconFamily = Family.REGULAR,
-            iconColor = Color.RED
-    )
-    public String banReason(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.BAN)
-                .map(Punishment::getReason)
-                .orElseThrow(IllegalStateException::new);
-    }
-
-    @BooleanProvider(
-            text = "Muted",
-            description = "Is the player muted on BanManager",
-            priority = 50,
-            conditionName = "muted",
-            iconName = "bell-slash",
-            iconColor = Color.DEEP_ORANGE
-    )
-    public boolean isMuted(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.MUTE).isPresent();
-    }
-
-    @Conditional("muted")
-    @StringProvider(
-            text = "Muted by",
-            description = "Who muted the player",
-            priority = 49,
-            iconName = "user",
-            iconColor = Color.DEEP_ORANGE,
-            playerName = true
-    )
-    public String muteIssuer(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.MUTE)
-                .map(PunishmentBase::getOperator)
-                .map(this::prettyOperator)
-                .orElseThrow(IllegalStateException::new);
-    }
-
-    @Conditional("muted")
-    @NumberProvider(
-            text = "Date",
-            description = "When the mute was issued",
-            priority = 48,
-            iconName = "calendar",
-            iconFamily = Family.REGULAR,
-            iconColor = Color.DEEP_ORANGE,
-            format = FormatType.DATE_YEAR
-    )
-    public long muteIssueDate(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.MUTE)
-                .map(Punishment::getStartDate)
-                .map(Instant::toEpochMilli)
-                .orElseThrow(IllegalStateException::new);
-    }
-
-    @Conditional("muted")
-    @NumberProvider(
-            text = "Ends",
-            description = "When the mute expires",
-            priority = 46,
-            iconName = "calendar-check",
-            iconFamily = Family.REGULAR,
-            iconColor = Color.DEEP_ORANGE,
-            format = FormatType.DATE_YEAR
-    )
-    public long muteExpireDate(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.MUTE)
-                .map(Punishment::getEndDate)
-                .map(Instant::toEpochMilli)
-                .orElseThrow(IllegalStateException::new);
-    }
-
-    @Conditional("muted")
-    @StringProvider(
-            text = "Reason",
-            description = "Why the mute was issued",
-            priority = 45,
-            iconName = "comment",
-            iconFamily = Family.REGULAR,
-            iconColor = Color.DEEP_ORANGE
-    )
-    public String muteReason(UUID playerUUID) {
-        return punishment(playerUUID, PunishmentType.MUTE)
-                .map(Punishment::getReason)
-                .orElseThrow(IllegalStateException::new);
+        return builder;
     }
 }
