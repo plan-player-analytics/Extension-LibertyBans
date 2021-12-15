@@ -117,18 +117,30 @@ public class LibertyBansExtension implements DataExtension {
                         .icon(Icon.called("user").of(Color.RED).build())
                         .showAsPlayerPageLink()
                         .buildString(prettyOperator(ban.getOperator())))
-                .addValue(Long.class, valueBuilder("Date")
-                        .description("When the ban was issued")
-                        .priority(98)
-                        .icon(Icon.called("calendar").of(Color.RED).of(Family.REGULAR).build())
-                        .format(FormatType.DATE_YEAR)
-                        .buildNumber(ban.getStartDate().toEpochMilli()))
-                .addValue(Long.class, valueBuilder("Ends")
-                        .description("When the ban expires")
-                        .priority(96)
-                        .icon(Icon.called("calendar-check").of(Color.RED).of(Family.REGULAR).build())
-                        .format(FormatType.DATE_YEAR)
-                        .buildNumber(ban.getEndDate().toEpochMilli()))
+                .addValue(Long.class, () -> {
+                    try {
+                        return valueBuilder("Date")
+                                .description("When the ban was issued")
+                                .priority(98)
+                                .icon(Icon.called("calendar").of(Color.RED).of(Family.REGULAR).build())
+                                .format(FormatType.DATE_YEAR)
+                                .buildNumber(ban.getStartDate().toEpochMilli());
+                    } catch (ArithmeticException outOfBounds) {
+                        return null;
+                    }
+                })
+                .addValue(Long.class, () -> {
+                    try {
+                        return valueBuilder("Ends")
+                                .description("When the ban expires")
+                                .priority(96)
+                                .icon(Icon.called("calendar-check").of(Color.RED).of(Family.REGULAR).build())
+                                .format(FormatType.DATE_YEAR)
+                                .buildNumber(ban.getEndDate().toEpochMilli());
+                    } catch (ArithmeticException outOfBounds) {
+                        return null;
+                    }
+                })
                 .addValue(String.class, valueBuilder("Reason")
                         .description("Why the ban was issued")
                         .priority(95)
