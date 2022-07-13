@@ -20,33 +20,40 @@
     OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
     THE SOFTWARE.
 */
-package com.djrapitops.extension;
+package net.playeranalytics.extension.libertybans;
 
+import com.djrapitops.plan.extension.Caller;
 import com.djrapitops.plan.extension.DataExtension;
-import com.djrapitops.plan.extension.extractor.ExtensionExtractor;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.djrapitops.plan.extension.NotReadyException;
+
+import java.util.Optional;
 
 /**
- * Test for the implementation of the new extension
+ * Factory for the LibertyBans DataExtension.
  *
- * @author AuroraLS3
+ * @author Vankka
  */
-class ExtensionImplementationTest {
+public class LibertyBansExtensionFactory {
 
-    private ExtensionExtractor extractor;
-
-    @BeforeEach
-    void prepareExtractor() {
-        DataExtension extension = new LibertyBansExtension();
-        extractor = new ExtensionExtractor(extension);
+    private boolean isAvailable() {
+        try {
+            Class.forName("space.arim.libertybans.api.LibertyBans");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 
-    @Test
-    @DisplayName("API is implemented correctly")
-    void noImplementationErrors() {
-        extractor.validateAnnotations();
+    public Optional<DataExtension> createExtension() {
+        if (isAvailable()) {
+            try {
+                return Optional.of(new LibertyBansExtension());
+            } catch (NotReadyException ignored) {}
+        }
+        return Optional.empty();
     }
 
+    public void registerListener(Caller caller) {
+        new LibertyBansListener(caller).register();
+    }
 }

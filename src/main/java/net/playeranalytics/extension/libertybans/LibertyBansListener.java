@@ -1,4 +1,4 @@
-package com.djrapitops.extension;
+package net.playeranalytics.extension.libertybans;
 
 import com.djrapitops.plan.extension.Caller;
 import space.arim.libertybans.api.PlayerVictim;
