@@ -35,7 +35,9 @@ import com.djrapitops.plan.extension.icon.Icon;
 import com.djrapitops.plan.query.QueryService;
 import space.arim.libertybans.api.*;
 import space.arim.libertybans.api.punish.Punishment;
+import space.arim.libertybans.api.select.AddressStrictness;
 import space.arim.libertybans.api.select.PunishmentSelector;
+import space.arim.libertybans.api.select.SortPunishments;
 import space.arim.omnibus.Omnibus;
 import space.arim.omnibus.OmnibusProvider;
 
@@ -77,8 +79,15 @@ public class LibertyBansExtension implements DataExtension {
     }
 
     private Optional<Punishment> punishment(UUID playerUUID, PunishmentType type) {
-        return selector().getApplicablePunishment(playerUUID, null, type)
-                .toCompletableFuture().join(); // We're off-thread, we just block for the information
+        PunishmentSelector selector = selector();
+        return selector
+                .selectionByApplicabilityBuilder(playerUUID, null)
+                .type(type)
+                .addressStrictness(AddressStrictness.LENIENT)
+                .build()
+                .getAllSpecificPunishments(SortPunishments.LATEST_END_DATE_FIRST)
+                .toCompletableFuture().join() // We're off-thread, we just block for the information
+                .stream().findFirst(); // Multiple punishments possible, just get the first one for now.
     }
 
     private String prettyOperator(Operator operator) {
