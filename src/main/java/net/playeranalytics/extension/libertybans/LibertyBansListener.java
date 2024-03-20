@@ -1,6 +1,7 @@
 package net.playeranalytics.extension.libertybans;
 
 import com.djrapitops.plan.extension.Caller;
+import space.arim.libertybans.api.CompositeVictim;
 import space.arim.libertybans.api.PlayerVictim;
 import space.arim.libertybans.api.Victim;
 import space.arim.libertybans.api.event.PostPardonEvent;
@@ -38,6 +39,8 @@ public class LibertyBansListener {
         Victim victim = punishment.getVictim();
         if (victim instanceof PlayerVictim) {
             caller.updatePlayerData(((PlayerVictim) victim).getUUID(), null);
+        }   else if (victim instanceof CompositeVictim) {
+            caller.updatePlayerData(((CompositeVictim) victim).getUUID(), null);
         }
     }
 }

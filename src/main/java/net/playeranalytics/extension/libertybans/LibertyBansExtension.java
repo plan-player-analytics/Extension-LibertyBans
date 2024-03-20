@@ -35,6 +35,7 @@ import com.djrapitops.plan.extension.icon.Icon;
 import com.djrapitops.plan.query.QueryService;
 import space.arim.libertybans.api.*;
 import space.arim.libertybans.api.punish.Punishment;
+import space.arim.libertybans.api.select.SelectionPredicate;
 import space.arim.libertybans.api.select.SortPunishments;
 import space.arim.omnibus.Omnibus;
 import space.arim.omnibus.OmnibusProvider;
@@ -52,7 +53,8 @@ public class LibertyBansExtension implements DataExtension {
 
     private LibertyBans api;
 
-    public LibertyBansExtension() {}
+    public LibertyBansExtension() {
+    }
 
     @Override
     public CallEvents[] callExtensionMethodsOn() {
@@ -76,7 +78,12 @@ public class LibertyBansExtension implements DataExtension {
         return api()
                 .getSelector()
                 .selectionBuilder()
-                .victim(PlayerVictim.of(playerUUID))
+                .victims(
+                        SelectionPredicate.matchingAnyOf(
+                                PlayerVictim.of(playerUUID),
+                                CompositeVictim.of(playerUUID, CompositeVictim.WILDCARD_ADDRESS)
+                        )
+                )
                 .type(type)
                 .build()
                 .getFirstSpecificPunishment(SortPunishments.LATEST_END_DATE_FIRST)
