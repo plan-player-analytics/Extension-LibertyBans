@@ -40,6 +40,7 @@ import space.arim.libertybans.api.select.SortPunishments;
 import space.arim.omnibus.Omnibus;
 import space.arim.omnibus.OmnibusProvider;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -102,6 +103,14 @@ public class LibertyBansExtension implements DataExtension {
         }
     }
 
+    private static long formatToLong(Instant mute) {
+        try {
+            return mute.toEpochMilli();
+        } catch (ArithmeticException infinitePunishment) {
+            return Long.MAX_VALUE;
+        }
+    }
+
     @DataBuilderProvider
     public ExtensionDataBuilder punishmentData(UUID playerUUID) {
         Optional<Punishment> possibleBan = punishment(playerUUID, PunishmentType.BAN);
@@ -133,7 +142,7 @@ public class LibertyBansExtension implements DataExtension {
                                 .priority(98)
                                 .icon(Icon.called("calendar").of(Color.RED).of(Family.REGULAR).build())
                                 .format(FormatType.DATE_YEAR)
-                                .buildNumber(ban.getStartDate().toEpochMilli());
+                                .buildNumber(formatToLong(ban.getStartDate()));
                     } catch (ArithmeticException outOfBounds) {
                         return null;
                     }
@@ -145,7 +154,7 @@ public class LibertyBansExtension implements DataExtension {
                                 .priority(96)
                                 .icon(Icon.called("calendar-check").of(Color.RED).of(Family.REGULAR).build())
                                 .format(FormatType.DATE_YEAR)
-                                .buildNumber(ban.getEndDate().toEpochMilli());
+                                .buildNumber(formatToLong(ban.getEndDate()));
                     } catch (ArithmeticException outOfBounds) {
                         return null;
                     }
@@ -169,13 +178,13 @@ public class LibertyBansExtension implements DataExtension {
                         .priority(48)
                         .icon(Icon.called("calendar").of(Color.DEEP_ORANGE).of(Family.REGULAR).build())
                         .format(FormatType.DATE_YEAR)
-                        .buildNumber(mute.getStartDate().toEpochMilli()))
+                        .buildNumber(formatToLong(mute.getStartDate())))
                 .addValue(Long.class, valueBuilder("Ends")
                         .description("When the mute expires")
                         .priority(46)
                         .icon(Icon.called("calendar-check").of(Color.DEEP_ORANGE).of(Family.REGULAR).build())
                         .format(FormatType.DATE_YEAR)
-                        .buildNumber(mute.getEndDate().toEpochMilli()))
+                        .buildNumber(formatToLong(mute.getEndDate())))
                 .addValue(String.class, valueBuilder("Reason")
                         .description("Why the mute was issued")
                         .priority(45)
